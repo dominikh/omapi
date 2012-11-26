@@ -47,26 +47,26 @@ func (opcode Opcode) String() (ret string) {
 }
 
 // TODO add size checks for all operations
-type Buffer struct {
+type buffer struct {
 	buffer *bytes.Buffer
 }
 
-func NewBuffer() *Buffer {
-	return &Buffer{new(bytes.Buffer)}
+func newBuffer() *buffer {
+	return &buffer{new(bytes.Buffer)}
 }
 
-func (b *Buffer) add_bytes(data []byte) {
+func (b *buffer) add_bytes(data []byte) {
 	b.buffer.Write(data)
 }
 
-func (b *Buffer) add(data interface{}) {
+func (b *buffer) add(data interface{}) {
 	err := binary.Write(b.buffer, binary.BigEndian, data)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (b *Buffer) add_map(data map[string][]byte) {
+func (b *buffer) add_map(data map[string][]byte) {
 	// We need to add the map in a deterministic order for signing to
 	// work, so we first sort the keys in alphabetical order, then use
 	// that order to access the map entries.
@@ -92,7 +92,7 @@ func (b *Buffer) add_map(data map[string][]byte) {
 	b.add([]byte("\x00\x00"))
 }
 
-func (b *Buffer) Bytes() []byte {
+func (b *buffer) bytes() []byte {
 	return b.buffer.Bytes()
 }
 
@@ -134,7 +134,7 @@ func NewDeleteMessage(handle int32) *Message {
 }
 
 func (m *Message) Bytes(forSigning bool) []byte {
-	ret := NewBuffer()
+	ret := newBuffer()
 	if !forSigning {
 		ret.add(m.AuthID)
 	}
@@ -258,10 +258,10 @@ func (con *Connection) Send(data []byte) (n int, err error) {
 }
 
 func (con *Connection) SendProtocolInitialization() {
-	buf := NewBuffer()
+	buf := newBuffer()
 	buf.add(int32(100)) // Protocol version
 	buf.add(int32(24))  // Header size
-	con.Send(buf.Bytes())
+	con.Send(buf.bytes())
 }
 
 func (con *Connection) Read() {
