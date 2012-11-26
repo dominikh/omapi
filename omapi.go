@@ -26,7 +26,10 @@ const (
 )
 
 var Ethernet = []byte{0, 0, 0, 1}
-var True     = []byte{0, 0, 0, 1}
+var TokenRing = []byte{0, 0, 0, 6}
+var FDDI = []byte{0, 0, 0, 8}
+
+var True = []byte{0, 0, 0, 1}
 
 func (opcode Opcode) String() (ret string) {
 	switch opcode {
