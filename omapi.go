@@ -213,8 +213,8 @@ func NewConnection(hostname string, port int, username string, key string) *Conn
 
 	con.connection = tcpConn
 
-	con.SendProtocolInitialization()
-	con.ReceiveProtocolInitialization()
+	con.sendProtocolInitialization()
+	con.receiveProtocolInitialization()
 	con.initializeAuthenticator(newAuth)
 
 	return con
@@ -246,7 +246,7 @@ func (con *Connection) initializeAuthenticator(auth Authenticator) {
 
 func (con *Connection) queryServer(msg *Message) *Message {
 	msg.Sign(con.Authenticator)
-	con.Send(msg.Bytes(false))
+	con.send(msg.Bytes(false))
 	response := con.parseMessage()
 	if !response.IsResponseTo(msg) {
 		panic("received message is not the desired response")
@@ -257,18 +257,18 @@ func (con *Connection) queryServer(msg *Message) *Message {
 	return response
 }
 
-func (con *Connection) Send(data []byte) (n int, err error) {
+func (con *Connection) send(data []byte) (n int, err error) {
 	return con.connection.Write(data)
 }
 
-func (con *Connection) SendProtocolInitialization() {
+func (con *Connection) sendProtocolInitialization() {
 	buf := newBuffer()
 	buf.add(int32(100)) // Protocol version
 	buf.add(int32(24))  // Header size
-	con.Send(buf.bytes())
+	con.send(buf.bytes())
 }
 
-func (con *Connection) Read() {
+func (con *Connection) read() {
 	buf := make([]byte, 2048)
 	n, err := con.connection.Read(buf)
 	if err != nil {
@@ -280,7 +280,7 @@ func (con *Connection) Read() {
 
 func (con *Connection) waitForN(n int) {
 	for con.inBuffer.Len() < n {
-		con.Read()
+		con.read()
 	}
 }
 
@@ -350,7 +350,7 @@ func (con *Connection) parseMessage() *Message {
 	return message
 }
 
-func (con *Connection) ReceiveProtocolInitialization() {
+func (con *Connection) receiveProtocolInitialization() {
 	version, headerSize := con.parseStartupMessage()
 	if version != 100 {
 		panic("version mismatch")
