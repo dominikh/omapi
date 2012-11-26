@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
-	"time"
-	"sort"
 	"os"
+	"sort"
+	"time"
 )
 
 type Opcode int32
