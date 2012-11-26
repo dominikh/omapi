@@ -129,6 +129,16 @@ func NewOpenMessage(typeName string) *Message {
 	return message
 }
 
+func NewCreateMessage(typeName string) *Message {
+	message := NewOpenMessage(typeName)
+	message.Message["create"] = True
+	// TODO Where is "exclusive" coming from? Is that always required
+	// for creates, or only for hosts?
+	message.Message["exclusive"] = True
+
+	return message
+}
+
 func NewDeleteMessage(handle int32) *Message {
 	message := NewMessage()
 	message.Opcode = OpDelete
@@ -456,10 +466,8 @@ func main() {
 
 	mac, _ := net.ParseMAC("08:00:27:4f:72:21")
 	ip := net.ParseIP("192.168.1.33")
-	message := NewOpenMessage("host")
+	message := NewCreateMessage("host")
 
-	message.Message["create"] = True
-	message.Message["exclusive"] = True
 	message.Object["hardware-address"] = []byte(mac)
 	message.Object["hardware-type"] = Ethernet
 	message.Object["ip-address"] = []byte(ip[12:])
