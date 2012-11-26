@@ -278,14 +278,14 @@ func (con *Connection) Read() {
 	con.inBuffer.Write(buf[0:n])
 }
 
-func (con *Connection) WaitForN(n int) {
+func (con *Connection) waitForN(n int) {
 	for con.inBuffer.Len() < n {
 		con.Read()
 	}
 }
 
 func (con *Connection) parseStartupMessage() (version, headerSize int32) {
-	con.WaitForN(8)
+	con.waitForN(8)
 
 	binary.Read(con.inBuffer, binary.BigEndian, &version)
 	binary.Read(con.inBuffer, binary.BigEndian, &headerSize)
@@ -304,20 +304,20 @@ func (con *Connection) parseMap() map[string][]byte {
 	)
 
 	for {
-		con.WaitForN(2)
+		con.waitForN(2)
 		binary.Read(con.inBuffer, binary.BigEndian, &keyLength)
 		if keyLength == 0 {
 			// end of map
 			break
 		}
 
-		con.WaitForN(int(keyLength))
+		con.waitForN(int(keyLength))
 		key = make([]byte, keyLength)
 		con.inBuffer.Read(key)
 
-		con.WaitForN(4)
+		con.waitForN(4)
 		binary.Read(con.inBuffer, binary.BigEndian, &valueLength)
-		con.WaitForN(int(valueLength))
+		con.waitForN(int(valueLength))
 		value = make([]byte, valueLength)
 		con.inBuffer.Read(value)
 
@@ -329,7 +329,7 @@ func (con *Connection) parseMap() map[string][]byte {
 
 func (con *Connection) parseMessage() *Message {
 	message := new(Message)
-	con.WaitForN(24) // authid + authlen + opcode + handle + tid + rid
+	con.waitForN(24) // authid + authlen + opcode + handle + tid + rid
 
 	var authlen int32
 
@@ -343,7 +343,7 @@ func (con *Connection) parseMessage() *Message {
 	message.Message = con.parseMap()
 	message.Object = con.parseMap()
 
-	con.WaitForN(int(authlen))
+	con.waitForN(int(authlen))
 	message.Signature = make([]byte, authlen)
 	con.inBuffer.Read(message.Signature)
 
