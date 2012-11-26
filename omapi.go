@@ -26,6 +26,7 @@ const (
 )
 
 var Ethernet = []byte{0, 0, 0, 1}
+var True     = []byte{0, 0, 0, 1}
 
 func (opcode Opcode) String() (ret string) {
 	switch opcode {
@@ -454,8 +455,8 @@ func main() {
 	ip := net.ParseIP("192.168.1.33")
 	message := NewOpenMessage("host")
 
-	message.Message["create"] = []byte{0, 0, 0, 1}
-	message.Message["exclusive"] = []byte{0, 0, 0, 1}
+	message.Message["create"] = True
+	message.Message["exclusive"] = True
 	message.Object["hardware-address"] = []byte(mac)
 	message.Object["hardware-type"] = Ethernet
 	message.Object["ip-address"] = []byte(ip[12:])
