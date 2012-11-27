@@ -172,8 +172,6 @@ func NewOpenMessage(typeName string) *Message {
 func NewCreateMessage(typeName string) *Message {
 	message := NewOpenMessage(typeName)
 	message.Message["create"] = True
-	// TODO Where is "exclusive" coming from? Is that always required
-	// for creates, or only for hosts?
 	message.Message["exclusive"] = True
 
 	return message
