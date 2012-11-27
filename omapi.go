@@ -15,6 +15,7 @@ import (
 )
 
 type Opcode int32
+type State int32
 
 const (
 	OpOpen Opcode = 1 + iota
@@ -23,6 +24,18 @@ const (
 	OpNotify
 	OpStatus
 	OpDelete
+)
+
+const (
+	StateFree = 1 + iota
+	StateActive
+	StateExpired
+	StateReleased
+	StateAbandoned
+	StateReset
+	StateBackup
+	StateReserved
+	StateBootp
 )
 
 var Ethernet = []byte{0, 0, 0, 1}
@@ -45,6 +58,31 @@ func (opcode Opcode) String() (ret string) {
 		ret = "status"
 	case 6:
 		ret = "delete"
+	}
+
+	return
+}
+
+func (state State) String() (ret string) {
+	switch state {
+	case 1:
+		ret = "free"
+	case 2:
+		ret = "active"
+	case 3:
+		ret = "expired"
+	case 4:
+		ret = "released"
+	case 5:
+		ret = "abandoned"
+	case 6:
+		ret = "reset"
+	case 7:
+		ret = "backup"
+	case 8:
+		ret = "reserved"
+	case 9:
+		ret = "bootp"
 	}
 
 	return
