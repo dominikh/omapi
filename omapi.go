@@ -278,7 +278,7 @@ func (con *Connection) initializeAuthenticator(auth Authenticator) {
 		message.Object[key] = value
 	}
 
-	response := con.queryServer(message)
+	response := con.Query(message)
 
 	if response.Opcode != OpUpdate {
 		panic("received non-update response for open")
@@ -292,7 +292,7 @@ func (con *Connection) initializeAuthenticator(auth Authenticator) {
 	con.Authenticator = auth
 }
 
-func (con *Connection) queryServer(msg *Message) *Message {
+func (con *Connection) Query(msg *Message) *Message {
 	msg.Sign(con.Authenticator)
 	con.send(msg.Bytes(false))
 	response := con.parseMessage()
