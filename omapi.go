@@ -1,4 +1,4 @@
-package main // FIXME omapi
+package omapi
 
 import (
 	"bytes"
@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
-	"os"
 	"sort"
 	"time"
 )
@@ -634,48 +633,4 @@ func (auth *HMACMD5Authenticator) AuthID() int32 {
 
 func (auth *HMACMD5Authenticator) SetAuthID(val int32) {
 	auth._AuthID = val
-}
-
-func main() {
-	rand.Seed(time.Now().UTC().UnixNano())
-
-	key := os.Getenv("OMAPI_KEY")
-	connection := NewConnection("192.168.1.1", 7911, "omapi_key", key)
-
-	// message := NewOpenMessage("lease")
-	// mac, _ := net.ParseMAC("bc:ae:c5:76:1d:5a")
-	// message.Object["hardware-address"] = []byte(mac)
-	// response := connection.queryServer(message)
-	// fmt.Println(response)
-
-	// message := NewOpenMessage("host")
-	// // message.Message["create"] = Ethernet
-	// mac, _ := net.ParseMAC("08:00:27:4f:72:21")
-	// message.Object["hardware-address"] = []byte(mac)
-
-	// // buf := new(bytes.Buffer)
-	// // binary.Write(buf, binary.BigEndian, int32(1))
-
-	// message.Object["hardware-type"] = Ethernet
-
-	// response := connection.queryServer(message)
-	// fmt.Println(response)
-	// response = connection.queryServer(NewDeleteMessage(response.Handle))
-	// fmt.Println(response)
-
-	mac, _ := net.ParseMAC("08:00:27:4f:72:21")
-	ip := net.ParseIP("192.168.1.33")
-	message := NewCreateMessage("host")
-
-	message.Object["hardware-address"] = []byte(mac)
-	message.Object["hardware-type"] = Ethernet
-	message.Object["ip-address"] = []byte(ip[12:])
-	message.Object["statements"] = []byte("ddns-hostname=\"win7.vm\";")
-	message.Object["name"] = []byte("win7.vm")
-
-	response := connection.queryServer(message)
-	if response.Opcode != OpUpdate {
-		fmt.Println("add failed:", string(response.Message["message"]))
-	}
-	// fmt.Println(response)
 }
