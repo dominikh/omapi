@@ -309,6 +309,17 @@ func (m *Message) IsResponseTo(other *Message) bool {
 	return m.Rid == other.Tid
 }
 
+func (m *Message) toHost() Host {
+	return Host{
+		Name:                 string(m.Object["name"]),
+		HardwareAddress:      net.HardwareAddr(m.Object["hardware-address"]),
+		HardwareType:         m.Object["hardware-type"],
+		DHCPClientIdentifier: m.Object["dhcp-client-identifier"],
+		IP:                   net.IP(m.Object["ip-address"]),
+		Handle:               m.Handle,
+	}
+}
+
 func (m *Message) toStatus() Status {
 	if m.Opcode != OpStatus {
 		return Statusses[0]
@@ -316,6 +327,60 @@ func (m *Message) toStatus() Status {
 
 	return Statusses[bytesToInt32(m.Message["result"])]
 }
+
+func (m *Message) toLease() Lease {
+	state := bytesToInt32(m.Object["state"])
+	host := bytesToInt32(m.Object["host"])
+	ends := bytesToInt32(m.Object["ends"])
+	tstp := bytesToInt32(m.Object["tstp"])
+	atsfp := bytesToInt32(m.Object["atsfp"])
+	cltt := bytesToInt32(m.Object["cltt"])
+
+	return Lease{
+		State:                State(state),
+		IP:                   net.IP(m.Object["ip-address"]),
+		DHCPClientIdentifier: m.Object["dhcp-client-identifier"],
+		ClientHostname:       string(m.Object["client-hostname"]),
+		Host:                 host,
+		HardwareAddress:      net.HardwareAddr(m.Object["hardware-address"]),
+		HardwareType:         m.Object["hardware-type"],
+		Ends:                 time.Unix(int64(ends), 0),
+		Tstp:                 time.Unix(int64(tstp), 0),
+		Atsfp:                time.Unix(int64(atsfp), 0),
+		Cltt:                 time.Unix(int64(cltt), 0),
+		Handle:               m.Handle,
+	}
+}
+
+type Host struct {
+	Name                 string
+	Group                int32 // TODO
+	HardwareAddress      net.HardwareAddr
+	HardwareType         []byte // TODO
+	DHCPClientIdentifier []byte
+	IP                   net.IP
+	Statements           string
+	Known                bool
+	Handle               int32
+}
+
+type Lease struct {
+	State                State
+	IP                   net.IP
+	DHCPClientIdentifier []byte
+	ClientHostname       string
+	Host                 int32 // TODO figure out what to do with handles
+	// Subnet, Pool, BillingClass are "currently not supported" by the dhcpd
+	HardwareAddress net.HardwareAddr
+	HardwareType    []byte // TODO
+	Ends            time.Time
+	// TODO maybe find nicer names for these times
+	Tstp   time.Time
+	Atsfp  time.Time
+	Cltt   time.Time
+	Handle int32
+}
+
 type Connection struct {
 	Hostname      string
 	Port          int
