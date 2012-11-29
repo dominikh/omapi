@@ -480,7 +480,7 @@ func (con *Connection) waitForN(n int) {
 }
 
 func (con *Connection) parseStartupMessage() (version, headerSize int32) {
-	con.waitForN(8)
+	con.waitForN(8) // version, headerSize
 
 	binary.Read(con.inBuffer, binary.BigEndian, &version)
 	binary.Read(con.inBuffer, binary.BigEndian, &headerSize)
@@ -499,20 +499,20 @@ func (con *Connection) parseMap() map[string][]byte {
 	)
 
 	for {
-		con.waitForN(2)
+		con.waitForN(2) // key length
 		binary.Read(con.inBuffer, binary.BigEndian, &keyLength)
 		if keyLength == 0 {
 			// end of map
 			break
 		}
 
-		con.waitForN(int(keyLength))
+		con.waitForN(int(keyLength)) // key
 		key = make([]byte, keyLength)
 		con.inBuffer.Read(key)
 
-		con.waitForN(4)
+		con.waitForN(4) // value length
 		binary.Read(con.inBuffer, binary.BigEndian, &valueLength)
-		con.waitForN(int(valueLength))
+		con.waitForN(int(valueLength)) // value
 		value = make([]byte, valueLength)
 		con.inBuffer.Read(value)
 
@@ -538,7 +538,7 @@ func (con *Connection) parseMessage() *Message {
 	message.Message = con.parseMap()
 	message.Object = con.parseMap()
 
-	con.waitForN(int(authlen))
+	con.waitForN(int(authlen)) // signature
 	message.Signature = make([]byte, authlen)
 	con.inBuffer.Read(message.Signature)
 
