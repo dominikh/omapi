@@ -634,3 +634,26 @@ func (con *Connection) FindHostByName(name string) (Host, error) {
 	return Host{}, errors.New(status.Message)
 }
 
+func (con *Connection) CreateHost(host Host) (Host, error) {
+	message := NewCreateMessage("host")
+	message.Object["name"] = []byte(host.Name)
+	message.Object["hardware-address"] = []byte(host.HardwareAddress)
+	message.Object["hardware-type"] = host.HardwareType
+	message.Object["ip-address"] = []byte(host.IP)[12:]
+
+	if len(host.Statements) > 0 {
+		message.Object["statements"] = []byte(host.Statements)
+	}
+
+	if len(host.DHCPClientIdentifier) > 0 {
+		message.Object["dhcp-client-identifier"] = host.DHCPClientIdentifier
+	}
+
+	response, status := con.Query(message)
+
+	if status.IsError() {
+		return Host{}, errors.New(status.Message)
+	}
+
+	return response.toHost(), nil
+}
