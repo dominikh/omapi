@@ -634,6 +634,20 @@ func (con *Connection) FindHostByName(name string) (Host, error) {
 	return Host{}, errors.New(status.Message)
 }
 
+func (con *Connection) Delete(handle int32) error {
+	message := NewMessage()
+	message.Opcode = OpDelete
+	message.Handle = handle
+
+	_, status := con.Query(message)
+
+	if status.IsError() {
+		return errors.New(status.Message)
+	}
+
+	return nil
+}
+
 func (con *Connection) CreateHost(host Host) (Host, error) {
 	message := NewCreateMessage("host")
 	message.Object["name"] = []byte(host.Name)
