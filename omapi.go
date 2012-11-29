@@ -16,7 +16,8 @@ import (
 type Opcode int32
 
 const (
-	OpOpen Opcode = 1 + iota
+	_             = iota
+	OpOpen Opcode = iota
 	OpRefresh
 	OpUpdate
 	OpNotify
@@ -46,7 +47,8 @@ func (opcode Opcode) String() (ret string) {
 type State int32
 
 const (
-	StateFree = 1 + iota
+	_         = iota
+	StateFree = iota
 	StateActive
 	StateExpired
 	StateReleased
