@@ -62,11 +62,11 @@ func (hw HardwareType) toBytes() []byte {
 
 func (hw HardwareType) String() (ret string) {
 	switch hw {
-	case 1:
+	case Ethernet:
 		ret = "Ethernet"
-	case 6:
+	case TokenRing:
 		ret = "Token ring"
-	case 8:
+	case FDDI:
 		ret = "FDDI"
 	}
 
@@ -77,17 +77,17 @@ var True = []byte{0, 0, 0, 1}
 
 func (opcode Opcode) String() (ret string) {
 	switch opcode {
-	case 1:
+	case OpOpen:
 		ret = "open"
-	case 2:
+	case OpRefresh:
 		ret = "refresh"
-	case 3:
+	case OpUpdate:
 		ret = "update"
-	case 4:
+	case OpNotify:
 		ret = "notify"
-	case 5:
+	case OpStatus:
 		ret = "status"
-	case 6:
+	case OpDelete:
 		ret = "delete"
 	}
 
@@ -96,23 +96,23 @@ func (opcode Opcode) String() (ret string) {
 
 func (state State) String() (ret string) {
 	switch state {
-	case 1:
+	case StateFree:
 		ret = "free"
-	case 2:
+	case StateActive:
 		ret = "active"
-	case 3:
+	case StateExpired:
 		ret = "expired"
-	case 4:
+	case StateReleased:
 		ret = "released"
-	case 5:
+	case StateAbandoned:
 		ret = "abandoned"
-	case 6:
+	case StateReset:
 		ret = "reset"
-	case 7:
+	case StateBackup:
 		ret = "backup"
-	case 8:
+	case StateReserved:
 		ret = "reserved"
-	case 9:
+	case StateBootp:
 		ret = "bootp"
 	}
 
