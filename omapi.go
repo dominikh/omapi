@@ -14,16 +14,6 @@ import (
 )
 
 type Opcode int32
-type State int32
-
-type Status struct {
-	Code    int32
-	Message string
-}
-
-func (s Status) IsError() bool {
-	return s.Code > 0
-}
 
 const (
 	OpOpen Opcode = 1 + iota
@@ -33,6 +23,27 @@ const (
 	OpStatus
 	OpDelete
 )
+
+func (opcode Opcode) String() (ret string) {
+	switch opcode {
+	case OpOpen:
+		ret = "open"
+	case OpRefresh:
+		ret = "refresh"
+	case OpUpdate:
+		ret = "update"
+	case OpNotify:
+		ret = "notify"
+	case OpStatus:
+		ret = "status"
+	case OpDelete:
+		ret = "delete"
+	}
+
+	return
+}
+
+type State int32
 
 const (
 	StateFree = 1 + iota
@@ -46,7 +57,39 @@ const (
 	StateBootp
 )
 
-const DefaultPort = 7911
+func (state State) String() (ret string) {
+	switch state {
+	case StateFree:
+		ret = "free"
+	case StateActive:
+		ret = "active"
+	case StateExpired:
+		ret = "expired"
+	case StateReleased:
+		ret = "released"
+	case StateAbandoned:
+		ret = "abandoned"
+	case StateReset:
+		ret = "reset"
+	case StateBackup:
+		ret = "backup"
+	case StateReserved:
+		ret = "reserved"
+	case StateBootp:
+		ret = "bootp"
+	}
+
+	return
+}
+
+type Status struct {
+	Code    int32
+	Message string
+}
+
+func (s Status) IsError() bool {
+	return s.Code > 0
+}
 
 type HardwareType int32
 
@@ -73,52 +116,10 @@ func (hw HardwareType) String() (ret string) {
 	return
 }
 
+const DefaultPort = 7911
+
 var True = []byte{0, 0, 0, 1}
 var False = []byte{0, 0, 0, 0}
-
-func (opcode Opcode) String() (ret string) {
-	switch opcode {
-	case OpOpen:
-		ret = "open"
-	case OpRefresh:
-		ret = "refresh"
-	case OpUpdate:
-		ret = "update"
-	case OpNotify:
-		ret = "notify"
-	case OpStatus:
-		ret = "status"
-	case OpDelete:
-		ret = "delete"
-	}
-
-	return
-}
-
-func (state State) String() (ret string) {
-	switch state {
-	case StateFree:
-		ret = "free"
-	case StateActive:
-		ret = "active"
-	case StateExpired:
-		ret = "expired"
-	case StateReleased:
-		ret = "released"
-	case StateAbandoned:
-		ret = "abandoned"
-	case StateReset:
-		ret = "reset"
-	case StateBackup:
-		ret = "backup"
-	case StateReserved:
-		ret = "reserved"
-	case StateBootp:
-		ret = "bootp"
-	}
-
-	return
-}
 
 // TODO add size checks for all operations
 type buffer struct {
