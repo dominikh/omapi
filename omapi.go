@@ -21,7 +21,6 @@ type Status struct {
 	Message string
 }
 
-
 func (s Status) IsError() bool {
 	return s.Code > 0
 }
@@ -49,9 +48,30 @@ const (
 
 const DefaultPort = 7911
 
-var Ethernet = []byte{0, 0, 0, 1}
-var TokenRing = []byte{0, 0, 0, 6}
-var FDDI = []byte{0, 0, 0, 8}
+type HardwareType int32
+
+const (
+	Ethernet  HardwareType = 1
+	TokenRing              = 6
+	FDDI                   = 8
+)
+
+func (hw HardwareType) toBytes() []byte {
+	return int32ToBytes(int32(hw))
+}
+
+func (hw HardwareType) String() (ret string) {
+	switch hw {
+	case 1:
+		ret = "Ethernet"
+	case 6:
+		ret = "Token ring"
+	case 8:
+		ret = "FDDI"
+	}
+
+	return
+}
 
 var True = []byte{0, 0, 0, 1}
 
@@ -202,6 +222,13 @@ func bytesToInt32(b []byte) int32 {
 	return int32(binary.BigEndian.Uint32(b))
 }
 
+func int32ToBytes(i int32) []byte {
+	b := make([]byte, 4)
+	binary.BigEndian.PutUint32(b, uint32(i))
+
+	return b
+}
+
 func (m *Message) Bytes(forSigning bool) []byte {
 	ret := newBuffer()
 	if !forSigning {
@@ -239,7 +266,7 @@ func (m *Message) toHost() Host {
 	return Host{
 		Name:                 string(m.Object["name"]),
 		HardwareAddress:      net.HardwareAddr(m.Object["hardware-address"]),
-		HardwareType:         m.Object["hardware-type"],
+		HardwareType:         HardwareType(bytesToInt32(m.Object["hardware-type"])),
 		DHCPClientIdentifier: m.Object["dhcp-client-identifier"],
 		IP:                   net.IP(m.Object["ip-address"]),
 		Handle:               m.Handle,
@@ -269,7 +296,7 @@ func (m *Message) toLease() Lease {
 		ClientHostname:       string(m.Object["client-hostname"]),
 		Host:                 host,
 		HardwareAddress:      net.HardwareAddr(m.Object["hardware-address"]),
-		HardwareType:         m.Object["hardware-type"],
+		HardwareType:         HardwareType(bytesToInt32(m.Object["hardware-type"])),
 		Ends:                 time.Unix(int64(ends), 0),
 		Tstp:                 time.Unix(int64(tstp), 0),
 		Atsfp:                time.Unix(int64(atsfp), 0),
@@ -282,7 +309,7 @@ type Host struct {
 	Name                 string
 	Group                int32 // TODO
 	HardwareAddress      net.HardwareAddr
-	HardwareType         []byte // TODO
+	HardwareType         HardwareType
 	DHCPClientIdentifier []byte
 	IP                   net.IP
 	Statements           string
@@ -298,7 +325,7 @@ type Lease struct {
 	Host                 int32 // TODO figure out what to do with handles
 	// Subnet, Pool, BillingClass are "currently not supported" by the dhcpd
 	HardwareAddress net.HardwareAddr
-	HardwareType    []byte // TODO
+	HardwareType    HardwareType
 	Ends            time.Time
 	// TODO maybe find nicer names for these times
 	Tstp   time.Time
@@ -580,7 +607,7 @@ func (con *Connection) CreateHost(host Host) (Host, error) {
 	message := NewCreateMessage("host")
 	message.Object["name"] = []byte(host.Name)
 	message.Object["hardware-address"] = []byte(host.HardwareAddress)
-	message.Object["hardware-type"] = host.HardwareType
+	message.Object["hardware-type"] = host.HardwareType.toBytes()
 	message.Object["ip-address"] = []byte(host.IP)[12:]
 
 	if len(host.Statements) > 0 {
@@ -590,6 +617,8 @@ func (con *Connection) CreateHost(host Host) (Host, error) {
 	if len(host.DHCPClientIdentifier) > 0 {
 		message.Object["dhcp-client-identifier"] = host.DHCPClientIdentifier
 	}
+
+	// TODO set Known
 
 	response, status := con.Query(message)
 
