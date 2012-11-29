@@ -130,7 +130,7 @@ func newBuffer() *buffer {
 	return &buffer{new(bytes.Buffer)}
 }
 
-func (b *buffer) add_bytes(data []byte) {
+func (b *buffer) addBytes(data []byte) {
 	b.buffer.Write(data)
 }
 
@@ -141,7 +141,7 @@ func (b *buffer) add(data interface{}) {
 	}
 }
 
-func (b *buffer) add_map(data map[string][]byte) {
+func (b *buffer) addMap(data map[string][]byte) {
 	// We need to add the map in a deterministic order for signing to
 	// work, so we first sort the keys in alphabetical order, then use
 	// that order to access the map entries.
@@ -242,8 +242,8 @@ func (m *Message) Bytes(forSigning bool) []byte {
 	ret.add(m.Handle)
 	ret.add(m.Tid)
 	ret.add(m.Rid)
-	ret.add_map(m.Message)
-	ret.add_map(m.Object)
+	ret.addMap(m.Message)
+	ret.addMap(m.Object)
 	if !forSigning {
 		ret.add(m.Signature)
 	}
