@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"math/rand"
 	"net"
 	"sort"
@@ -381,22 +380,14 @@ type Lease struct {
 }
 
 type Connection struct {
-	Hostname      string
-	Port          int
-	Username      string
-	Key           string
-	Authenticator Authenticator
-	connection    *net.TCPConn
+	authenticator Authenticator
+	connection    net.Conn
 	inBuffer      *bytes.Buffer
 }
 
-func NewConnection(hostname string, port int, username string, key string) (*Connection, error) {
+func Dial(addr, username, key string) (*Connection, error) {
 	con := &Connection{
-		Hostname:      hostname,
-		Port:          port,
-		Username:      username,
-		Key:           key,
-		Authenticator: new(NullAuthenticator),
+		authenticator: new(NullAuthenticator),
 		inBuffer:      new(bytes.Buffer),
 	}
 
@@ -410,11 +401,7 @@ func NewConnection(hostname string, port int, username string, key string) (*Con
 		newAuth = &HMACMD5Authenticator{username, decodedKey, -1}
 	}
 
-	raddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", hostname, port))
-	if err != nil {
-		return nil, err
-	}
-	tcpConn, err := net.DialTCP("tcp", nil, raddr)
+	tcpConn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
@@ -449,11 +436,11 @@ func (con *Connection) initializeAuthenticator(auth Authenticator) {
 	}
 
 	auth.SetAuthID(response.Handle)
-	con.Authenticator = auth
+	con.authenticator = auth
 }
 
 func (con *Connection) Query(msg *Message) (*Message, Status) {
-	msg.Sign(con.Authenticator)
+	msg.Sign(con.authenticator)
 	con.send(msg.Bytes(false))
 	response := con.parseMessage()
 	if !response.IsResponseTo(msg) {
