@@ -74,6 +74,7 @@ func (hw HardwareType) String() (ret string) {
 }
 
 var True = []byte{0, 0, 0, 1}
+var False = []byte{0, 0, 0, 0}
 
 func (opcode Opcode) String() (ret string) {
 	switch opcode {
@@ -618,7 +619,13 @@ func (con *Connection) CreateHost(host Host) (Host, error) {
 		message.Object["dhcp-client-identifier"] = host.DHCPClientIdentifier
 	}
 
-	// TODO set Known
+	// The server doesn't currently care about Known
+
+	// if host.Known {
+	//	message.Object["known"] = True
+	// } else {
+	//	message.Object["known"] = False
+	// }
 
 	response, status := con.Query(message)
 
