@@ -634,3 +634,16 @@ func (auth *HMACMD5Authenticator) AuthID() int32 {
 func (auth *HMACMD5Authenticator) SetAuthID(val int32) {
 	auth._AuthID = val
 }
+
+func (con *Connection) FindHostByName(name string) (Host, error) {
+	message := NewOpenMessage("host")
+	message.Object["name"] = []byte(name)
+
+	response, status := con.Query(message)
+	if response.Opcode == OpUpdate {
+		return response.toHost(), nil
+	}
+
+	return Host{}, errors.New(status.Message)
+}
+
