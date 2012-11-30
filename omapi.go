@@ -137,8 +137,7 @@ func (b *buffer) addBytes(data []byte) {
 }
 
 func (b *buffer) add(data interface{}) {
-	err := binary.Write(b.buffer, binary.BigEndian, data)
-	if err != nil {
+	if err := binary.Write(b.buffer, binary.BigEndian, data); err != nil {
 		panic(err)
 	}
 }
