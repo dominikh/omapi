@@ -1,3 +1,6 @@
+// Package omapi implements the OMAPI protocol of the ISC DHCP server,
+// allowing it to query and modify objects as well as control the
+// server itself.
 package omapi
 
 import (
@@ -87,6 +90,7 @@ type Status struct {
 	Message string
 }
 
+// IsError returns true if the status is describing an error.
 func (s Status) IsError() bool {
 	return s.Code > 0
 }
