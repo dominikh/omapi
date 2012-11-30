@@ -558,9 +558,12 @@ func (con *Connection) Delete(handle int32) error {
 func (con *Connection) CreateHost(host Host) (Host, error) {
 	message := NewCreateMessage("host")
 	message.Object["name"] = []byte(host.Name)
-	message.Object["hardware-address"] = []byte(host.HardwareAddress)
-	message.Object["hardware-type"] = host.HardwareType.toBytes()
 	message.Object["ip-address"] = []byte(host.IP)[12:]
+
+	if !bytes.Equal([]byte(host.HardwareAddress), nil) {
+		message.Object["hardware-address"] = []byte(host.HardwareAddress)
+		message.Object["hardware-type"] = host.HardwareType.toBytes()
+	}
 
 	if len(host.Statements) > 0 {
 		message.Object["statements"] = []byte(host.Statements)
