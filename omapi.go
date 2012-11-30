@@ -345,18 +345,18 @@ type Connection struct {
 
 func Dial(addr, username, key string) (*Connection, error) {
 	con := &Connection{
-		authenticator: new(NullAuthenticator),
+		authenticator: new(nullAuthenticator),
 		inBuffer:      new(bytes.Buffer),
 	}
 
-	var newAuth Authenticator = new(NullAuthenticator)
+	var newAuth Authenticator = new(nullAuthenticator)
 
 	if len(username) > 0 && len(key) > 0 {
 		decodedKey, err := base64.StdEncoding.DecodeString(key)
 		if err != nil {
 			panic(err)
 		}
-		newAuth = &HMACMD5Authenticator{username, decodedKey, -1}
+		newAuth = &hmacMD5Authenticator{username, decodedKey, -1}
 	}
 
 	tcpConn, err := net.Dial("tcp", addr)
@@ -379,7 +379,7 @@ func Dial(addr, username, key string) (*Connection, error) {
 }
 
 func (con *Connection) initializeAuthenticator(auth Authenticator) error {
-	if _, ok := auth.(*NullAuthenticator); ok {
+	if _, ok := auth.(*nullAuthenticator); ok {
 		return nil
 	}
 
@@ -531,43 +531,43 @@ type Authenticator interface {
 	SetAuthID(int32)
 }
 
-type NullAuthenticator struct{}
+type nullAuthenticator struct{}
 
-func (_ *NullAuthenticator) AuthObject() map[string][]byte {
+func (_ *nullAuthenticator) AuthObject() map[string][]byte {
 	return make(map[string][]byte)
 }
 
-func (_ *NullAuthenticator) Sign(_ *Message) []byte {
+func (_ *nullAuthenticator) Sign(_ *Message) []byte {
 	return []byte("")
 }
 
-func (_ *NullAuthenticator) AuthLen() int32 {
+func (_ *nullAuthenticator) AuthLen() int32 {
 	return 0
 }
 
-func (_ *NullAuthenticator) AuthID() int32 {
+func (_ *nullAuthenticator) AuthID() int32 {
 	return 0
 }
 
-func (_ *NullAuthenticator) SetAuthID(_ int32) {
+func (_ *nullAuthenticator) SetAuthID(_ int32) {
 }
 
-type HMACMD5Authenticator struct {
-	Username string
-	Key      []byte
-	_AuthID  int32
+type hmacMD5Authenticator struct {
+	username string
+	key      []byte
+	authID  int32
 }
 
-func (auth *HMACMD5Authenticator) AuthObject() map[string][]byte {
+func (auth *hmacMD5Authenticator) AuthObject() map[string][]byte {
 	ret := make(map[string][]byte)
-	ret["name"] = []byte(auth.Username)
+	ret["name"] = []byte(auth.username)
 	ret["algorithm"] = []byte("hmac-md5.SIG-ALG.REG.INT.")
 
 	return ret
 }
 
-func (auth *HMACMD5Authenticator) Sign(m *Message) []byte {
-	hmac := hmac.New(md5.New, auth.Key)
+func (auth *hmacMD5Authenticator) Sign(m *Message) []byte {
+	hmac := hmac.New(md5.New, auth.key)
 
 	// The signature's length is part of the message that we are
 	// signing, so initialize the signature with the correct length.
@@ -577,16 +577,16 @@ func (auth *HMACMD5Authenticator) Sign(m *Message) []byte {
 	return hmac.Sum(nil)
 }
 
-func (_ *HMACMD5Authenticator) AuthLen() int32 {
+func (_ *hmacMD5Authenticator) AuthLen() int32 {
 	return 16
 }
 
-func (auth *HMACMD5Authenticator) AuthID() int32 {
-	return auth._AuthID
+func (auth *hmacMD5Authenticator) AuthID() int32 {
+	return auth.authID
 }
 
-func (auth *HMACMD5Authenticator) SetAuthID(val int32) {
-	auth._AuthID = val
+func (auth *hmacMD5Authenticator) SetAuthID(val int32) {
+	auth.authID = val
 }
 
 func (con *Connection) FindHostByName(name string) (Host, error) {
