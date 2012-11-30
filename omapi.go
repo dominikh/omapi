@@ -368,15 +368,20 @@ func Dial(addr, username, key string) (*Connection, error) {
 	con.connection = tcpConn
 
 	con.sendProtocolInitialization()
-	con.receiveProtocolInitialization()
-	con.initializeAuthenticator(newAuth)
+	if err := con.receiveProtocolInitialization(); err != nil {
+		return nil, err
+	}
+
+	if err := con.initializeAuthenticator(newAuth); err != nil {
+		return nil, err
+	}
 
 	return con, nil
 }
 
-func (con *Connection) initializeAuthenticator(auth Authenticator) {
+func (con *Connection) initializeAuthenticator(auth Authenticator) error {
 	if _, ok := auth.(*NullAuthenticator); ok {
-		return
+		return nil
 	}
 
 	message := NewOpenMessage("authenticator")
@@ -387,15 +392,17 @@ func (con *Connection) initializeAuthenticator(auth Authenticator) {
 	response, _ := con.Query(message)
 
 	if response.Opcode != OpUpdate {
-		panic("received non-update response for open")
+		return errors.New("received non-update response for open")
 	}
 
 	if response.Handle == 0 {
-		panic("received invalid authid from server")
+		return errors.New("received invalid authid from server")
 	}
 
 	auth.SetAuthID(response.Handle)
 	con.authenticator = auth
+
+	return nil
 }
 
 func (con *Connection) Query(msg *Message) (*Message, Status) {
@@ -504,15 +511,17 @@ func (con *Connection) parseMessage() *Message {
 	return message
 }
 
-func (con *Connection) receiveProtocolInitialization() {
+func (con *Connection) receiveProtocolInitialization() error {
 	version, headerSize := con.parseStartupMessage()
 	if version != 100 {
-		panic("version mismatch")
+		return errors.New("version mismatch")
 	}
 
 	if headerSize != 24 {
-		panic("header size mismatch")
+		return errors.New("header size mismatch")
 	}
+
+	return nil
 }
 
 type Authenticator interface {
