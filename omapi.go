@@ -95,6 +95,10 @@ func (s Status) IsError() bool {
 	return s.Code > 0
 }
 
+func (s Status) Error() string {
+	return s.Message
+}
+
 type HardwareType int32
 
 const (
@@ -534,7 +538,7 @@ func (con *Connection) FindHostByName(name string) (Host, error) {
 		return response.toHost(), nil
 	}
 
-	return Host{}, errors.New(status.Message)
+	return Host{}, status
 }
 
 func (con *Connection) Delete(handle int32) error {
@@ -545,7 +549,7 @@ func (con *Connection) Delete(handle int32) error {
 	_, status := con.Query(message)
 
 	if status.IsError() {
-		return errors.New(status.Message)
+		return status
 	}
 
 	return nil
@@ -577,7 +581,7 @@ func (con *Connection) CreateHost(host Host) (Host, error) {
 	response, status := con.Query(message)
 
 	if status.IsError() {
-		return Host{}, errors.New(status.Message)
+		return Host{}, status
 	}
 
 	return response.toHost(), nil
