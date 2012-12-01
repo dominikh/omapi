@@ -610,6 +610,23 @@ func (con *Connection) FindHost(host Host) (Host, error) {
 	return Host{}, status
 }
 
+func (con *Connection) FindLease(lease Lease) (Lease, error) {
+	// - IP works
+	// - DHCPClientIdentifier works
+	// - State does not, even though documentation claims it does
+	// - ClientHostname does not, even though documentation claims it does
+	message := NewOpenMessage("lease")
+
+	message.Object = lease.toObject()
+
+	response, status := con.Query(message)
+	if response.Opcode == OpUpdate {
+		return response.toLease(), nil
+	}
+
+	return Lease{}, status
+}
+
 func (con *Connection) Delete(handle int32) error {
 	message := NewMessage()
 	message.Opcode = OpDelete
