@@ -45,47 +45,47 @@ func (opcode Opcode) String() (ret string) {
 	return
 }
 
-type State int32
+type LeaseState int32
 
 const (
-	_         = iota
-	StateFree = iota
-	StateActive
-	StateExpired
-	StateReleased
-	StateAbandoned
-	StateReset
-	StateBackup
-	StateReserved
-	StateBootp
+	_              = iota
+	LeaseStateFree = iota
+	LeaseStateActive
+	LeaseStateExpired
+	LeaseStateReleased
+	LeaseStateAbandoned
+	LeaseStateReset
+	LeaseStateBackup
+	LeaseStateReserved
+	LeaseStateBootp
 )
 
-func (state State) String() (ret string) {
+func (state LeaseState) String() (ret string) {
 	switch state {
-	case StateFree:
+	case LeaseStateFree:
 		ret = "free"
-	case StateActive:
+	case LeaseStateActive:
 		ret = "active"
-	case StateExpired:
+	case LeaseStateExpired:
 		ret = "expired"
-	case StateReleased:
+	case LeaseStateReleased:
 		ret = "released"
-	case StateAbandoned:
+	case LeaseStateAbandoned:
 		ret = "abandoned"
-	case StateReset:
+	case LeaseStateReset:
 		ret = "reset"
-	case StateBackup:
+	case LeaseStateBackup:
 		ret = "backup"
-	case StateReserved:
+	case LeaseStateReserved:
 		ret = "reserved"
-	case StateBootp:
+	case LeaseStateBootp:
 		ret = "bootp"
 	}
 
 	return
 }
 
-func (state State) toBytes() []byte {
+func (state LeaseState) toBytes() []byte {
 	return int32ToBytes(int32(state))
 }
 
@@ -306,7 +306,7 @@ func (m *Message) toLease() Lease {
 	cltt := bytesToInt32(m.Object["cltt"])
 
 	return Lease{
-		State:                State(state),
+		State:                LeaseState(state),
 		IP:                   net.IP(m.Object["ip-address"]),
 		DHCPClientIdentifier: m.Object["dhcp-client-identifier"],
 		ClientHostname:       string(m.Object["client-hostname"]),
@@ -360,7 +360,7 @@ func (host Host) toObject() map[string][]byte {
 }
 
 type Lease struct {
-	State                State
+	State                LeaseState
 	IP                   net.IP
 	DHCPClientIdentifier []byte
 	ClientHostname       string
