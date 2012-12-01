@@ -337,7 +337,7 @@ func (host Host) toObject() map[string][]byte {
 
 	object["name"] = []byte(host.Name)
 
-	if !bytes.Equal([]byte(host.IP), nil) {
+	if len([]byte(host.IP)) > 0 {
 		object["ip-address"] = []byte(host.IP)[12:]
 	} else {
 		object["ip-address"] = nil
@@ -388,7 +388,7 @@ func (lease Lease) toObject() map[string][]byte {
 
 	// TODO check if sending the IP in an update will cause an
 	// error
-	if !bytes.Equal([]byte(lease.IP), nil) {
+	if len([]byte(lease.IP)) > 0 {
 		object["ip-address"] = []byte(lease.IP)[12:]
 	} else {
 		object["ip-address"] = nil
