@@ -326,6 +326,33 @@ type Host struct {
 	Handle               int32
 }
 
+func (host Host) toObject() map[string][]byte {
+	object := make(map[string][]byte)
+
+	if len(host.Name) > 0 {
+		object["name"] = []byte(host.Name)
+	}
+
+	if !bytes.Equal([]byte(host.IP), nil) {
+		object["ip-address"] = []byte(host.IP)[12:]
+	}
+
+	if !bytes.Equal([]byte(host.HardwareAddress), nil) {
+		object["hardware-address"] = []byte(host.HardwareAddress)
+		object["hardware-type"] = host.HardwareType.toBytes()
+	}
+
+	if len(host.Statements) > 0 {
+		object["statements"] = []byte(host.Statements)
+	}
+
+	if len(host.DHCPClientIdentifier) > 0 {
+		object["dhcp-client-identifier"] = host.DHCPClientIdentifier
+	}
+
+	return object
+}
+
 type Lease struct {
 	State                State
 	IP                   net.IP
@@ -557,21 +584,7 @@ func (con *Connection) Delete(handle int32) error {
 
 func (con *Connection) CreateHost(host Host) (Host, error) {
 	message := NewCreateMessage("host")
-	message.Object["name"] = []byte(host.Name)
-	message.Object["ip-address"] = []byte(host.IP)[12:]
-
-	if !bytes.Equal([]byte(host.HardwareAddress), nil) {
-		message.Object["hardware-address"] = []byte(host.HardwareAddress)
-		message.Object["hardware-type"] = host.HardwareType.toBytes()
-	}
-
-	if len(host.Statements) > 0 {
-		message.Object["statements"] = []byte(host.Statements)
-	}
-
-	if len(host.DHCPClientIdentifier) > 0 {
-		message.Object["dhcp-client-identifier"] = host.DHCPClientIdentifier
-	}
+	message.Object = host.toObject()
 
 	// The server doesn't currently care about Known
 
