@@ -337,15 +337,20 @@ func (host Host) toObject() map[string][]byte {
 		object["ip-address"] = []byte(host.IP)[12:]
 	}
 
+	// TODO what if we want to unset it?
 	if !bytes.Equal([]byte(host.HardwareAddress), nil) {
 		object["hardware-address"] = []byte(host.HardwareAddress)
 		object["hardware-type"] = host.HardwareType.toBytes()
 	}
 
+	// TODO what if we want to unset it? Actually, no need to worry,
+	// because the server doesn't support changing the statement,
+	// anyway.
 	if len(host.Statements) > 0 {
 		object["statements"] = []byte(host.Statements)
 	}
 
+	// TODO what if we want to unset it?
 	if len(host.DHCPClientIdentifier) > 0 {
 		object["dhcp-client-identifier"] = host.DHCPClientIdentifier
 	}
@@ -556,9 +561,10 @@ func (con *Connection) receiveProtocolInitialization() error {
 	return nil
 }
 
-func (con *Connection) FindHostByName(name string) (Host, error) {
+func (con *Connection) FindHost(host Host) (Host, error) {
 	message := NewOpenMessage("host")
-	message.Object["name"] = []byte(name)
+
+	message.Object = host.toObject()
 
 	response, status := con.Query(message)
 	if response.Opcode == OpUpdate {
