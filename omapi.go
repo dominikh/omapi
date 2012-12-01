@@ -133,7 +133,6 @@ const DefaultPort = 7911
 var True = []byte{0, 0, 0, 1}
 var False = []byte{0, 0, 0, 0}
 
-// TODO add size checks for all operations
 type buffer struct {
 	buffer *bytes.Buffer
 }
@@ -413,6 +412,7 @@ type Connection struct {
 	inBuffer      *bytes.Buffer
 }
 
+// Dial establishes a connection to an OMAPI-enabled server.
 func Dial(addr, username, key string) (*Connection, error) {
 	con := &Connection{
 		authenticator: new(nullAuthenticator),
@@ -474,6 +474,10 @@ func (con *Connection) initializeAuthenticator(auth Authenticator) error {
 	return nil
 }
 
+// Query sends a message to the server and waits for a reply. It
+// returns the underlying response as well as its representation as a
+// status. If the message didn't contain a status, the success status
+// will be returned instead.
 func (con *Connection) Query(msg *Message) (*Message, Status) {
 	msg.Sign(con.authenticator)
 	con.send(msg.Bytes(false))
@@ -620,6 +624,32 @@ func (con *Connection) Delete(handle int32) error {
 	return nil
 }
 
+// CreateHost creates a new host object on the server. The passed
+// argument with its fields populated will be sent to the server and
+// saved, if possible. The server's representation of the new host
+// will be returned.
+//
+// The returned object will be incomplete compared to the original
+// argument, because OMAPI doesn't transfer all information back to
+// us.
+//
+// Example:
+//	mac, _ := net.ParseMAC("aa:bb:cc:dd:ee:ff")
+//	host := Host{
+//		Name:            "new_host",
+//		HardwareAddress: mac,
+//		HardwareType:    Ethernet,
+//		IP:              net.ParseIP("10.0.0.2"),
+//		Statements:      `ddns-hostname "the.hostname";`,
+//	}
+//
+//	newHost, err := connection.CreateHost(host)
+//	if err != nil {
+//		// Couldn't create the new host, error string will tell us why
+//	} else {
+//		// We successfuly created a new host. newHost will contain the
+//		// OMAPI representation of it, including a handle
+//	}
 func (con *Connection) CreateHost(host Host) (Host, error) {
 	message := NewCreateMessage("host")
 	message.Object = host.toObject()
