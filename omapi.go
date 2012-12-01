@@ -168,7 +168,9 @@ func (b *buffer) addMap(data map[string][]byte) {
 		b.add([]byte(key))
 
 		b.add(int32(len(value)))
-		b.add(value)
+		if len(value) > 0 {
+			b.add(value)
+		}
 	}
 
 	b.add([]byte("\x00\x00"))
@@ -321,39 +323,33 @@ type Host struct {
 	HardwareType         HardwareType
 	DHCPClientIdentifier []byte
 	IP                   net.IP
-	Statements           string
-	Known                bool
+	Statements           string // Not populated by OMAPI
+	Known                bool   // Not populated by OMAPI
 	Handle               int32
 }
 
 func (host Host) toObject() map[string][]byte {
 	object := make(map[string][]byte)
 
-	if len(host.Name) > 0 {
-		object["name"] = []byte(host.Name)
-	}
+	object["name"] = []byte(host.Name)
 
 	if !bytes.Equal([]byte(host.IP), nil) {
 		object["ip-address"] = []byte(host.IP)[12:]
+	} else {
+		object["ip-address"] = nil
 	}
 
-	// TODO what if we want to unset it?
-	if !bytes.Equal([]byte(host.HardwareAddress), nil) {
-		object["hardware-address"] = []byte(host.HardwareAddress)
+	object["hardware-address"] = []byte(host.HardwareAddress)
+	if host.HardwareType == 0 {
+		object["hardware-type"] = nil
+	} else {
 		object["hardware-type"] = host.HardwareType.toBytes()
 	}
 
-	// TODO what if we want to unset it? Actually, no need to worry,
-	// because the server doesn't support changing the statement,
-	// anyway.
-	if len(host.Statements) > 0 {
-		object["statements"] = []byte(host.Statements)
-	}
+	// TODO remove statements field when updating an object, to work around bug
+	object["statements"] = []byte(host.Statements)
 
-	// TODO what if we want to unset it?
-	if len(host.DHCPClientIdentifier) > 0 {
-		object["dhcp-client-identifier"] = host.DHCPClientIdentifier
-	}
+	object["dhcp-client-identifier"] = host.DHCPClientIdentifier
 
 	return object
 }
