@@ -85,6 +85,10 @@ func (state State) String() (ret string) {
 	return
 }
 
+func (state State) toBytes() []byte {
+	return int32ToBytes(int32(state))
+}
+
 type Status struct {
 	Code    int32
 	Message string
@@ -369,6 +373,38 @@ type Lease struct {
 	Atsfp  time.Time
 	Cltt   time.Time
 	Handle int32
+}
+
+func (lease Lease) toObject() map[string][]byte {
+	object := make(map[string][]byte)
+
+	// TODO check if sending the state in an update will cause an
+	// error
+	if lease.State > 0 {
+		object["state"] = lease.State.toBytes()
+	} else {
+		object["state"] = nil
+	}
+
+	// TODO check if sending the IP in an update will cause an
+	// error
+	if !bytes.Equal([]byte(lease.IP), nil) {
+		object["ip-address"] = []byte(lease.IP)[12:]
+	} else {
+		object["ip-address"] = nil
+	}
+
+	object["dhcp-client-identifier"] = lease.DHCPClientIdentifier
+	object["client-hostname"] = []byte(lease.ClientHostname)
+	object["hardware-address"] = []byte(lease.HardwareAddress)
+
+	if lease.HardwareType == 0 {
+		object["hardware-type"] = nil
+	} else {
+		object["hardware-type"] = lease.HardwareType.toBytes()
+	}
+
+	return object
 }
 
 type Connection struct {
