@@ -130,8 +130,10 @@ func (hw HardwareType) String() (ret string) {
 
 const DefaultPort = 7911
 
-var True = []byte{0, 0, 0, 1}
-var False = []byte{0, 0, 0, 0}
+var (
+	True  = []byte{0, 0, 0, 1}
+	False = []byte{0, 0, 0, 0}
+)
 
 type buffer struct {
 	buffer *bytes.Buffer
