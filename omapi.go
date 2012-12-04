@@ -89,6 +89,76 @@ func (state LeaseState) toBytes() []byte {
 	return int32ToBytes(int32(state))
 }
 
+type FailoverState int32
+
+const (
+	FailoverStateStartup                   FailoverState = 1
+	FailoverStateNormal                                  = 2
+	FailoverStateCommunicationsInterrupted               = 3
+	FailoverStatePartnerDown                             = 4
+	FailoverStatePotentialConflict                       = 5
+	FailoverStateRecover                                 = 6
+	FailoverStatePaused                                  = 7
+	FailoverStateShutdown                                = 8
+	FailoverStateRecoverDone                             = 9
+	FailoverStateResolutionInterrupted                   = 10
+	FailoverStateConflictDone                            = 11
+	FailoverStateRecoverWait                             = 254
+)
+
+func (state FailoverState) toBytes() []byte {
+	return int32ToBytes(int32(state))
+}
+
+func (state FailoverState) String() (ret string) {
+	switch state {
+	case FailoverStateStartup:
+		ret = "startup"
+	case FailoverStateNormal:
+		ret = "normal"
+	case FailoverStateCommunicationsInterrupted:
+		ret = "communications interrupted"
+	case FailoverStatePartnerDown:
+		ret = "partner down"
+	case FailoverStatePotentialConflict:
+		ret = "potential conflict"
+	case FailoverStateRecover:
+		ret = "recover"
+	case FailoverStatePaused:
+		ret = "paused"
+	case FailoverStateShutdown:
+		ret = "shutdown"
+	case FailoverStateRecoverDone:
+		ret = "recover done"
+	case FailoverStateResolutionInterrupted:
+		ret = "resolution interrupted"
+	case FailoverStateConflictDone:
+		ret = "conflict done"
+	case FailoverStateRecoverWait:
+		ret = "recover wait"
+	}
+
+	return
+}
+
+type FailoverHierarchy int32
+
+const (
+	HierarchyPrimary FailoverHierarchy = iota
+	HierarchySecondary
+)
+
+func (h FailoverHierarchy) String() (ret string) {
+	switch h {
+	case HierarchyPrimary:
+		ret = "primary"
+	case HierarchySecondary:
+		ret = "secondary"
+	}
+
+	return
+}
+
 type Status struct {
 	Code    int32
 	Message string
@@ -321,6 +391,46 @@ func (m *Message) toLease() Lease {
 	}
 }
 
+func (m *Message) toFailover() Failover {
+	partnerPort := bytesToInt32(m.Object["partner-port"])
+	localPort := bytesToInt32(m.Object["local-port"])
+	maxOutstandingUpdates := bytesToInt32(m.Object["max-outstanding-updates"])
+	mclt := bytesToInt32(m.Object["mclt"])
+	loadBalanceMaxSecs := bytesToInt32(m.Object["load-balance-max-secs"])
+	localState := bytesToInt32(m.Object["local-state"])
+	partnerState := bytesToInt32(m.Object["partner-state"])
+	localStos := bytesToInt32(m.Object["local-stos"])
+	partnerStos := bytesToInt32(m.Object["partner-stos"])
+	hierarchy := bytesToInt32(m.Object["hierarchy"])
+	lastPacketSent := bytesToInt32(m.Object["last-packet-sent"])
+	lastTimestampReceived := bytesToInt32(m.Object["last-timestamp-received"])
+	skew := bytesToInt32(m.Object["skew"])
+	maxResponseDelay := bytesToInt32(m.Object["max-response-delay"])
+	curUnackedUpdates := bytesToInt32(m.Object["cur-unacked-updates"])
+
+	return Failover{
+		Name:                  string(m.Object["name"]),
+		PartnerAddress:        net.IP(m.Object["partner-address"]),
+		LocalAddress:          net.IP(m.Object["local-address"]),
+		PartnerPort:           partnerPort,
+		LocalPort:             localPort,
+		MaxOutstandingUpdates: maxOutstandingUpdates,
+		Mclt:                  mclt,
+		LoadBalanceMaxSecs:    loadBalanceMaxSecs,
+		LoadBalanceHBA:        m.Object["load-balance-hba"],
+		LocalState:            FailoverState(localState),
+		PartnerState:          FailoverState(partnerState),
+		LocalStos:             time.Unix(int64(localStos), 0),
+		PartnerStos:           time.Unix(int64(partnerStos), 0),
+		Hierarchy:             FailoverHierarchy(hierarchy),
+		LastPacketSent:        time.Unix(int64(lastPacketSent), 0),
+		LastTimestampReceived: time.Unix(int64(lastTimestampReceived), 0),
+		Skew:                  skew,
+		MaxResponseDelay:      maxResponseDelay,
+		CurUnackedUpdates:     curUnackedUpdates,
+	}
+}
+
 type Host struct {
 	Name                 string
 	Group                int32 // TODO
@@ -406,6 +516,28 @@ func (lease Lease) toObject() map[string][]byte {
 	}
 
 	return object
+}
+
+type Failover struct {
+	Name                  string
+	PartnerAddress        net.IP
+	LocalAddress          net.IP
+	PartnerPort           int32
+	LocalPort             int32
+	MaxOutstandingUpdates int32
+	Mclt                  int32 // TODO maybe find a better name
+	LoadBalanceMaxSecs    int32
+	LoadBalanceHBA        []byte // TODO what type would this be?
+	LocalState            FailoverState
+	PartnerState          FailoverState
+	LocalStos             time.Time // TODO maybe find a better name
+	PartnerStos           time.Time // TODO maybe find a better name
+	Hierarchy             FailoverHierarchy
+	LastPacketSent        time.Time
+	LastTimestampReceived time.Time
+	Skew                  int32
+	MaxResponseDelay      int32
+	CurUnackedUpdates     int32
 }
 
 type Connection struct {
@@ -627,6 +759,19 @@ func (con *Connection) FindLease(lease Lease) (Lease, error) {
 	}
 
 	return Lease{}, status
+}
+
+func (con *Connection) FindFailover(name string) (Failover, error) {
+	message := NewOpenMessage("failover-state")
+
+	message.Object["name"] = []byte(name)
+
+	response, status := con.Query(message)
+	if response.Opcode == OpUpdate {
+		return response.toFailover(), nil
+	}
+
+	return Failover{}, status
 }
 
 func (con *Connection) Delete(handle int32) error {
