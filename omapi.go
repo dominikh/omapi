@@ -256,21 +256,21 @@ func (b *buffer) bytes() []byte {
 }
 
 type Message struct {
-	AuthID    int32
-	Opcode    Opcode
-	Handle    int32
-	Tid       int32
-	Rid       int32
-	Message   map[string][]byte
-	Object    map[string][]byte
-	Signature []byte
+	AuthID        int32
+	Opcode        Opcode
+	Handle        int32
+	TransactionID int32
+	ResponseID    int32
+	Message       map[string][]byte
+	Object        map[string][]byte
+	Signature     []byte
 }
 
 func NewMessage() *Message {
 	msg := &Message{
-		Tid:     rand.Int31(),
-		Message: make(map[string][]byte),
-		Object:  make(map[string][]byte),
+		TransactionID: rand.Int31(),
+		Message:       make(map[string][]byte),
+		Object:        make(map[string][]byte),
 	}
 
 	return msg
@@ -324,8 +324,8 @@ func (m *Message) Bytes(forSigning bool) []byte {
 	ret.add(int32(len(m.Signature)))
 	ret.add(m.Opcode)
 	ret.add(m.Handle)
-	ret.add(m.Tid)
-	ret.add(m.Rid)
+	ret.add(m.TransactionID)
+	ret.add(m.ResponseID)
 	ret.addMap(m.Message)
 	ret.addMap(m.Object)
 	if !forSigning {
@@ -345,7 +345,7 @@ func (m *Message) Verify(auth Authenticator) bool {
 }
 
 func (m *Message) IsResponseTo(other *Message) bool {
-	return m.Rid == other.Tid
+	return m.ResponseID == other.TransactionID
 }
 
 func (m *Message) toHost() Host {
@@ -705,8 +705,8 @@ func (con *Connection) parseMessage() *Message {
 	binary.Read(con.inBuffer, binary.BigEndian, &authlen)
 	binary.Read(con.inBuffer, binary.BigEndian, &message.Opcode)
 	binary.Read(con.inBuffer, binary.BigEndian, &message.Handle)
-	binary.Read(con.inBuffer, binary.BigEndian, &message.Tid)
-	binary.Read(con.inBuffer, binary.BigEndian, &message.Rid)
+	binary.Read(con.inBuffer, binary.BigEndian, &message.TransactionID)
+	binary.Read(con.inBuffer, binary.BigEndian, &message.ResponseID)
 
 	message.Message = con.parseMap()
 	message.Object = con.parseMap()
