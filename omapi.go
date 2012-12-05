@@ -761,6 +761,7 @@ func (con *Connection) FindLease(lease Lease) (Lease, error) {
 	return Lease{}, status
 }
 
+// FindFailover finds a failover-state given its name.
 func (con *Connection) FindFailover(name string) (Failover, error) {
 	message := NewOpenMessage("failover-state")
 
@@ -774,6 +775,7 @@ func (con *Connection) FindFailover(name string) (Failover, error) {
 	return Failover{}, status
 }
 
+// Delete deletes an object from the server, given its handle.
 func (con *Connection) Delete(handle int32) error {
 	message := NewMessage()
 	message.Opcode = OpDelete
