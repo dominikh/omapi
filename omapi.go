@@ -449,7 +449,7 @@ func (host Host) toObject() map[string][]byte {
 	object["name"] = []byte(host.Name)
 
 	if len([]byte(host.IP)) > 0 {
-		object["ip-address"] = []byte(host.IP)[12:]
+		object["ip-address"] = []byte(host.IP.To4())
 	} else {
 		object["ip-address"] = nil
 	}
