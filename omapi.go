@@ -360,7 +360,7 @@ func (m *Message) IsResponseTo(other *Message) bool {
 	return m.ResponseID == other.TransactionID
 }
 
-func (m *Message) toHost() Host {
+func (m *Message) ToHost() Host {
 	return Host{
 		Name:                 string(m.Object["name"]),
 		HardwareAddress:      net.HardwareAddr(m.Object["hardware-address"]),
@@ -371,7 +371,7 @@ func (m *Message) toHost() Host {
 	}
 }
 
-func (m *Message) toStatus() Status {
+func (m *Message) ToStatus() Status {
 	if m.Opcode != OpStatus {
 		return Statuses[0]
 	}
@@ -379,7 +379,7 @@ func (m *Message) toStatus() Status {
 	return Statuses[bytesToInt32(m.Message["result"])]
 }
 
-func (m *Message) toLease() Lease {
+func (m *Message) ToLease() Lease {
 	state := bytesToInt32(m.Object["state"])
 	host := bytesToInt32(m.Object["host"])
 	ends := bytesToInt32(m.Object["ends"])
@@ -403,7 +403,7 @@ func (m *Message) toLease() Lease {
 	}
 }
 
-func (m *Message) toFailover() Failover {
+func (m *Message) ToFailover() Failover {
 	partnerPort := bytesToInt32(m.Object["partner-port"])
 	localPort := bytesToInt32(m.Object["local-port"])
 	maxOutstandingUpdates := bytesToInt32(m.Object["max-outstanding-updates"])
@@ -634,7 +634,7 @@ func (con *Connection) Query(msg *Message) (*Message, Status) {
 
 	// TODO check authid
 
-	return response, response.toStatus()
+	return response, response.ToStatus()
 }
 
 func (con *Connection) send(data []byte) (n int, err error) {
@@ -750,7 +750,7 @@ func (con *Connection) FindHost(host Host) (Host, error) {
 
 	response, status := con.Query(message)
 	if response.Opcode == OpUpdate {
-		return response.toHost(), nil
+		return response.ToHost(), nil
 	}
 
 	return Host{}, status
@@ -767,7 +767,7 @@ func (con *Connection) FindLease(lease Lease) (Lease, error) {
 
 	response, status := con.Query(message)
 	if response.Opcode == OpUpdate {
-		return response.toLease(), nil
+		return response.ToLease(), nil
 	}
 
 	return Lease{}, status
@@ -781,7 +781,7 @@ func (con *Connection) FindFailover(name string) (Failover, error) {
 
 	response, status := con.Query(message)
 	if response.Opcode == OpUpdate {
-		return response.toFailover(), nil
+		return response.ToFailover(), nil
 	}
 
 	return Failover{}, status
@@ -846,5 +846,37 @@ func (con *Connection) CreateHost(host Host) (Host, error) {
 		return Host{}, status
 	}
 
-	return response.toHost(), nil
+	return response.ToHost(), nil
+}
+
+func (con *Connection) Update(handle int32, object Object) error {
+	// Notes: Cannot change a host's name
+
+	message := NewUpdateMessage(handle)
+	message.Object = object.toUpdateObject()
+
+	// Do not transmit empty fields. And as far as we know, unsetting
+	// fields doesn't work, anyway.
+	for key := range message.Object {
+		if len(message.Object[key]) == 0 {
+			delete(message.Object, key)
+		}
+	}
+
+	// The dhcp client identifier can only be changed if it was empty
+	// before, so right now, we don't allow setting it at all.
+	delete(message.Object, "dhcp-client-identifier")
+
+	// TODO unset fields that cause nasty crashes
+	_, status := con.Query(message)
+
+	if status.IsError() {
+		return status
+	}
+
+	return nil
+}
+
+func (con *Connection) Shutdown() {
+	// open Control object, set state to 2, update object, rejoice
 }
