@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"net"
 	"sort"
+	"sync"
 	"time"
 )
 
@@ -205,6 +206,13 @@ var (
 	False = []byte{0, 0, 0, 0}
 )
 
+type syncRng struct {
+	sync.Mutex
+	*rand.Rand
+}
+
+var rng = syncRng{sync.Mutex{}, rand.New(rand.NewSource(time.Now().UTC().UnixNano()))}
+
 type buffer struct {
 	buffer *bytes.Buffer
 }
@@ -267,8 +275,12 @@ type Message struct {
 }
 
 func NewMessage() *Message {
+	rng.Lock()
+	tid := rng.Int31()
+	rng.Unlock()
+
 	msg := &Message{
-		TransactionID: rand.Int31(),
+		TransactionID: tid,
 		Message:       make(map[string][]byte),
 		Object:        make(map[string][]byte),
 	}
